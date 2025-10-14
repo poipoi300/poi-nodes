@@ -18,4 +18,4 @@ This node will crop an image to the specified dimensions, optionally cropping a 
 Given the case that a fully black or white mask is passed, the crop node will return a white mask matching the image size, allowing the reuse of workflows for inpainting and img2img.
 
 ## Paste
-This node will paste an image onto another image at the specified position, optionally pasting a mask onto another mask at the same position. It's expected to be used in conjuction with the original mask that was fed to the crop node.
+This node will paste an image onto another image based on mask coordinates, It's expected to be used in conjuction with the original mask that was fed to the first crop node (refer to example workflow).
