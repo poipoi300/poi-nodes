@@ -1,9 +1,15 @@
 # Nodes
-from .py.base_max_size import SmartResize
+from .py.cutter import Cutter
+from .py.resize import SmartResize
+from .py.stitcher import Stitcher
 
 NODE_CLASS_MAPPINGS = {
-    "SmartResize": SmartResize
+    "Cutter": Cutter,
+    "SmartResize": SmartResize,
+    "Stitcher": Stitcher
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "SmartResize": "Smart Resize"
+    "Cutter": "Cutter",
+    "SmartResize": "Smart Resize",
+    "Stitcher": "Stitcher"
 }

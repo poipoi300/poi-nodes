@@ -1,0 +1,7 @@
+[project]
+name = "poi-nodes"
+version = "0.1.0"
+description = "Set of nodes for me and thee"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
