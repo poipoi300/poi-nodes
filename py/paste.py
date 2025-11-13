@@ -80,9 +80,6 @@ class Paste:
         # Convert mask to binary (0 or 1)
         binary_mask = (mask > 0.5).float()
 
-        print(f"Binary mask shape: {binary_mask.shape}")
-        print(f"Binary mask unique values: {torch.unique(binary_mask)}")
-
         # Pad the mask to ensure proper edge detection for the distance transform.
         # For edges that align with the canvas, we pad with 1s (inside the mask) to prevent blending.
         # For non-aligned edges, we pad with 0s (outside the mask) to create the blend.
@@ -106,8 +103,6 @@ class Paste:
         if is_right_edge:
             padded_mask[:, -pad_size:] = 1
 
-        print(f"Padded mask shape: {padded_mask.shape}")
-
         # Apply euclidean distance transform to get distance from background (0s) for each foreground pixel
         # This gives us distance from edge inward for mask pixels
         distance_map_padded = euclidean_distance_transform(padded_mask)
@@ -115,16 +110,9 @@ class Paste:
         # Remove padding to get back to original size
         distance_map = distance_map_padded[pad_size:-pad_size, pad_size:-pad_size]
 
-        print(
-            f"Distance map range: {distance_map.min():.3f} - {distance_map.max():.3f}"
-        )
-        print(f"Blend distance: {blend_distance}")
-
         # Create inset falloff: pixels close to edge (small distance) get low opacity
         # Pixels far from edge (large distance) get full opacity
         falloff = torch.clamp(distance_map / blend_distance, 0.0, 1.0)
-
-        print(f"Falloff range: {falloff.min():.3f} - {falloff.max():.3f}")
 
         # Apply falloff only to original mask pixels
         result = binary_mask * falloff
@@ -137,11 +125,6 @@ class Paste:
             kernel_size += 1
 
         result_smoothed = self._gaussian_blur_2d(result, kernel_size, blur_sigma)
-
-        print(f"Result range: {result.min():.3f} - {result.max():.3f}")
-        print(
-            f"Smoothed result range: {result_smoothed.min():.3f} - {result_smoothed.max():.3f}"
-        )
 
         return result_smoothed
 
@@ -208,8 +191,6 @@ class Paste:
 
     def paste(self, image_dest, image_source, output_mode, opt_mask=None, blend=0.0):
         batch_size, height, width, channels = image_dest.shape
-        print("Image destination shape:", image_dest.shape)
-        print("Image source shape:", image_source.shape)
 
         if opt_mask is None or torch.all(opt_mask == 0.0) or torch.all(opt_mask == 1.0):
             return (image_dest,)
@@ -248,19 +229,11 @@ class Paste:
             blend_distance = blend * min_dimension * 0.5  # Scale with mask size
             blend_distance = max(blend_distance, 2.0)  # Ensure minimum blend
 
-            print(
-                f"Applying inset blend: blend={blend}, blend_distance={blend_distance}"
-            )
-
             # Determine which edges of the mask are aligned with the canvas edges
             is_top_edge = y_min == 0
             is_left_edge = x_min == 0
             is_bottom_edge = y_max == height - 1
             is_right_edge = x_max == width - 1
-
-            print(
-                f"Edge alignment: top={is_top_edge}, left={is_left_edge}, bottom={is_bottom_edge}, right={is_right_edge}"
-            )
 
             # Apply inset blend using euclidean distance transform
             mask_float = mask_cropped.float()
@@ -271,13 +244,6 @@ class Paste:
                 is_left_edge=is_left_edge,
                 is_bottom_edge=is_bottom_edge,
                 is_right_edge=is_right_edge,
-            )
-
-            print(
-                f"Original mask range: {mask_float.min():.3f} - {mask_float.max():.3f}"
-            )
-            print(
-                f"Blended mask range: {mask_cropped.min():.3f} - {mask_cropped.max():.3f}"
             )
 
         # Clamp mask values
