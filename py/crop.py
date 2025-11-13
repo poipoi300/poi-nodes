@@ -130,11 +130,36 @@ class Crop:
                 y_max -= safe_shrink_bottom
             else:
                 # Need to expand to higher multiple
-                expand_top = min(expand_needed // 2, y_min)
-                expand_bottom = min(expand_needed - expand_top, height - 1 - y_max)
+                # BUGFIX: Check total available space and re-balance expansion
+                available_top = y_min
+                available_bottom = height - 1 - y_max
+                total_available = available_top + available_bottom
 
-                y_min -= expand_top
-                y_max += expand_bottom
+                if total_available >= expand_needed:
+                    # We *can* achieve divisibility.
+                    expand_top = expand_needed // 2
+                    expand_bottom = expand_needed - expand_top
+
+                    # If we don't have enough room on top, move the deficit to the bottom
+                    if expand_top > available_top:
+                        deficit = expand_top - available_top
+                        expand_top = available_top
+                        expand_bottom += deficit
+                    # If we don't have enough room on bottom, move the deficit to the top
+                    elif expand_bottom > available_bottom:
+                        deficit = expand_bottom - available_bottom
+                        expand_bottom = available_bottom
+                        expand_top += deficit
+
+                    y_min -= expand_top
+                    y_max += expand_bottom
+                else:
+                    # We *cannot* achieve divisibility.
+                    # Fall back to original behavior: just expand as much as possible.
+                    expand_top = min(expand_needed // 2, available_top)
+                    expand_bottom = min(expand_needed - expand_top, available_bottom)
+                    y_min -= expand_top
+                    y_max += expand_bottom
 
         # For width adjustment
         if w_remainder != 0:
@@ -163,11 +188,36 @@ class Crop:
                 x_max -= safe_shrink_right
             else:
                 # Need to expand to higher multiple
-                expand_left = min(expand_needed // 2, x_min)
-                expand_right = min(expand_needed - expand_left, width - 1 - x_max)
+                # BUGFIX: Check total available space and re-balance expansion
+                available_left = x_min
+                available_right = width - 1 - x_max
+                total_available = available_left + available_right
 
-                x_min -= expand_left
-                x_max += expand_right
+                if total_available >= expand_needed:
+                    # We *can* achieve divisibility.
+                    expand_left = expand_needed // 2
+                    expand_right = expand_needed - expand_left
+
+                    # If we don't have enough room on left, move the deficit to the right
+                    if expand_left > available_left:
+                        deficit = expand_left - available_left
+                        expand_left = available_left
+                        expand_right += deficit
+                    # If we don't have enough room on right, move the deficit to the left
+                    elif expand_right > available_right:
+                        deficit = expand_right - available_right
+                        expand_right = available_right
+                        expand_left += deficit
+
+                    x_min -= expand_left
+                    x_max += expand_right
+                else:
+                    # We *cannot* achieve divisibility.
+                    # Fall back to original behavior: just expand as much as possible.
+                    expand_left = min(expand_needed // 2, available_left)
+                    expand_right = min(expand_needed - expand_left, available_right)
+                    x_min -= expand_left
+                    x_max += expand_right
 
         final_h = y_max - y_min + 1
         final_w = x_max - x_min + 1
@@ -187,7 +237,7 @@ class Crop:
             # 1. Handle Input Trivial Mask
             if not self.handle_mask(single_mask):
                 white_mask = torch.ones(
-                    1, height, width, dtype=torch.float32, device=device
+                    height, width, dtype=torch.float32, device=device
                 )
                 return (single_image, white_mask, white_mask)
 
